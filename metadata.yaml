@@ -1,0 +1,8 @@
+name: devstack
+summary: devstack is the openstack development environment
+maintainer: Paul Hummer <paul.hummer@canonical.com>
+description: |
+  devstack is the common development environment for openstack
+tags:
+  - openstack
+subordinate: false

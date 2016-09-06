@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -e
+
+apt-get install -y lxd
+
+if [ ! -e /tmp/start.sh ]
+then
+
+    cat <<EOF > /tmp/start.sh
+IP=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
+export HTTP_PROXY="http://squid.internal:3128/"
+export HTTPS_PROXY="https://squid.internal:3128/"
+export NO_PROXY=127.0.0.1,$IP
+
+echo "http_proxy=squid.internal:3128" >> ~/.wgetrc
+git config --global url."https://".insteadOf git://
+
+git clone https://git.openstack.org/openstack-dev/devstack ~/devstack
+
+cat >~/devstack/local.conf <<EOL
+[[local|localrc]]
+GIT_BASE=https://github.com
+
+ADMIN_PASSWORD=pass
+DATABASE_PASSWORD=pass
+RABBIT_PASSWORD=pass
+SERVICE_PASSWORD=pass
+
+disable_service horizon
+disable_service novnc
+
+enable_plugin nova-lxd https://git.openstack.org/openstack/nova-lxd
+EOL
+
+cd ~/devstack && ./stack.sh > /tmp/devstack.log
+EOF
+    chmod 755 /tmp/start.sh
+
+    sudo -i -u ubuntu /tmp/start.sh
+fi
